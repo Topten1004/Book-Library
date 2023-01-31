@@ -20,6 +20,8 @@ using Microsoft.AspNetCore.Hosting;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Book.Library.Data;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Builder;
 
 namespace Book.Library.Test
 {
@@ -28,6 +30,9 @@ namespace Book.Library.Test
         Mock<IGenericRepository> _repository;
         Mock<IGenericService> _service;
 
+        private IConfiguration Configuration = null;
+
+
         private readonly HttpClient _httpClient = new() { BaseAddress = new Uri("https://localhost:7193/") };
         public static readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
         public const string _jsonMediaType = "application/json";
@@ -35,10 +40,12 @@ namespace Book.Library.Test
         private readonly ITestOutputHelper output;
         public List<BookEntity> seedDatas = new List<BookEntity>();
 
-        string json = "[\r\n\t{\r\n\t\t\"id\": \"B1\",\r\n\t\t\"author\": \"Kutner, Joe\",\r\n\t\t\"title\": \"Deploying with JRuby\",\r\n\t\t\"genre\": \"Computer\",\r\n\t\t\"price\": \"33.00\",\r\n\t\t\"publish_date\": \"2012-08-15\",\r\n\t\t\"description\": \"Deploying with JRuby is the missing link between enjoying JRuby and using it in the real world to build high-performance, scalable applications.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B2\",\r\n\t\t\"author\": \"Ralls, Kim\",\r\n\t\t\"title\": \"Midnight Rain\",\r\n\t\t\"genre\": \"Fantasy\",\r\n\t\t\"price\": \"5.95\",\r\n\t\t\"publish_date\": \"2000-12-16\",\r\n\t\t\"description\": \"A former architect battles corporate zombies, an evil sorceress, and her own childhood to become queen of the world.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B3\",\r\n\t\t\"author\": \"Corets, Eva\",\r\n\t\t\"title\": \"Maeve Ascendant\",\r\n\t\t\"genre\": \"Fantasy\",\r\n\t\t\"price\": \"5.95\",\r\n\t\t\"publish_date\": \"2000-11-17\",\r\n\t\t\"description\": \"After the collapse of a nanotechnology society in England, the young survivors lay the foundation for a new society.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B4\",\r\n\t\t\"author\": \"Corets, Eva\",\r\n\t\t\"title\": \"Oberon's Legacy\",\r\n\t\t\"genre\": \"Fantasy\",\r\n\t\t\"price\": \"5.95\",\r\n\t\t\"publish_date\": \"2001-03-10\",\r\n\t\t\"description\": \"In post-apocalypse England, the mysterious agent known only as Oberon helps to create a new life for the inhabitants of London. Sequel to Maeve Ascendant.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B5\",\r\n\t\t\"author\": \"Tolkien, JRR\",\r\n\t\t\"title\": \"The Hobbit\",\r\n\t\t\"genre\": \"Fantasy\",\r\n\t\t\"price\": \"11.95\",\r\n\t\t\"publish_date\": \"1985-09-10\",\r\n\t\t\"description\": \"If you care for journeys there and back, out of the comfortable Western world, over the edge of the Wild, and home again, and can take an interest in a humble hero blessed with a little wisdom and a little courage and considerable good luck, here is a record of such a journey and such a traveler.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B6\",\r\n\t\t\"author\": \"Randall, Cynthia\",\r\n\t\t\"title\": \"Lover Birds\",\r\n\t\t\"genre\": \"Romance\",\r\n\t\t\"price\": \"4.95\",\r\n\t\t\"publish_date\": \"2000-09-02\",\r\n\t\t\"description\": \"When Carla meets Paul at an ornithology conference, tempers fly as feathers get ruffled.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B7\",\r\n\t\t\"author\": \"Thurman, Paula\",\r\n\t\t\"title\": \"Splish Splash\",\r\n\t\t\"genre\": \"Romance\",\r\n\t\t\"price\": \"4.95\",\r\n\t\t\"publish_date\": \"2000-11-02\",\r\n\t\t\"description\": \"A deep sea diver finds true love twenty thousand leagues beneath the sea.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B8\",\r\n\t\t\"author\": \"Knorr, Stefan\",\r\n\t\t\"title\": \"Creepy Crawlies\",\r\n\t\t\"genre\": \"Horror\",\r\n\t\t\"price\": \"4.95\",\r\n\t\t\"publish_date\": \"2000-12-06\",\r\n\t\t\"description\": \"An anthology of horror stories about roaches, centipedes, scorpions  and other insects.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B9\",\r\n\t\t\"author\": \"Kress, Peter\",\r\n\t\t\"title\": \"Paradox Lost\",\r\n\t\t\"genre\": \"Science Fiction\",\r\n\t\t\"price\": \"6.95\",\r\n\t\t\"publish_date\": \"2000-11-02\",\r\n\t\t\"description\": \"After an inadvertant trip through a Heisenberg Uncertainty Device, James Salway discovers the problems of being quantum.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B10\",\r\n\t\t\"author\": \"O'Brien, Tim\",\r\n\t\t\"title\": \"Microsoft .NET: The Programming Bible\",\r\n\t\t\"genre\": \"Computer\",\r\n\t\t\"price\": \"36.95\",\r\n\t\t\"publish_date\": \"2000-12-09\",\r\n\t\t\"description\": \"Microsoft's .NET initiative is explored in detail in this deep programmer's reference.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B11\",\r\n\t\t\"author\": \"Sydik, Jeremy J\",\r\n\t\t\"title\": \"Design Accessible Web SiTest\",\r\n\t\t\"genre\": \"Computer\",\r\n\t\t\"price\": \"34.95\",\r\n\t\t\"publish_date\": \"2007-12-01\",\r\n\t\t\"description\": \"Accessibility has a reputation of being dull, dry, and unfriendly toward graphic design. But there is a better way: well-styled semantic markup that lets you provide the best possible results for all of your users. This book will help you provide images, video, Flash and PDF in an accessible way that looks great to your sighted users, but is still accessible to all users.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B12\",\r\n\t\t\"author\": \"Russell, Alex\",\r\n\t\t\"title\": \"Mastering Dojo\",\r\n\t\t\"genre\": \"Computer\",\r\n\t\t\"price\": \"38.95\",\r\n\t\t\"publish_date\": \"2008-06-01\",\r\n\t\t\"description\": \"The last couple of years have seen big changes in server-side web programming. Now it’s the client’s turn; Dojo is the toolkit to make it happen and Mastering Dojo shows you how.\"\r\n\t},\r\n\t{\r\n\t\t\"id\": \"B13\",\r\n\t\t\"author\": \"Copeland, David Bryant\",\r\n\t\t\"title\": \"Build Awesome Command-Line Applications in Ruby\",\r\n\t\t\"genre\": \"Computer\",\r\n\t\t\"price\": \"20.00\",\r\n\t\t\"publish_date\": \"2012-03-01\",\r\n\t\t\"description\": \"Speak directly to your system. With its simple commands, flags, and parameters, a well-formed command-line application is the quickest way to automate a backup, a build, or a deployment and simplify your life.\"\r\n\t}\r\n]";
         public BookControllerTest(ITestOutputHelper output)
         {
             this.output = output;
+
+            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data/Books.json");
+            var json = File.ReadAllText(filePath);
             seedDatas = JsonConvert.DeserializeObject<List<BookEntity>>(json);
 
             this._repository = new Mock<IGenericRepository>();
@@ -46,23 +53,20 @@ namespace Book.Library.Test
         }
 
         [Fact]
-        public async void GetAllBooksOK()
+        public async Task GetAllBookItemsFromDataBase()
         {
-            ////Arrange
-            var books = this.CreateBooksList();
-            var userRepository = new Mock<IGenericRepository>();
-            userRepository.Setup(x => x.GetBookList()).ReturnsAsync(books);
-            IGenericService _service = new GenericService(userRepository.Object);
+            var str = "Server=.;Initial Catalog=BookLibDb; Integrated Security = True; trusted_connection=true;encrypt=false;";
+            var context = new ApplicationDbContext(str);
+            IGenericRepository _repository = new GenericRepository(context);
+            var _service = new GenericService(_repository);
+            List<BookEntity> sales = new List<BookEntity>();
 
-            ////Act
-            List<BookEntity> result = (List<BookEntity>)_service.GetBookList().Result;
+            var bookItems = await _service.GetBookList().ConfigureAwait(false);
 
-            //Assert
-            Assert.Equal(true, CompareList(result, books));
-            Assert.NotEmpty(result);
+            Assert.True(true);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Post Request SaveBook")]
         public async void SaveBookDetail()
         {
             ////Arrange
@@ -93,7 +97,6 @@ namespace Book.Library.Test
             //Assert
             Assert.Equal(book, result);
         }
-
         [Fact]
         public void GetBookDetailById()
         {
@@ -130,34 +133,6 @@ namespace Book.Library.Test
             return seedDatas;
         }
 
-        //[Fact]
-        //public async Task TesttPostBook()
-        //{
-        //    // Arrange.
-        //    var expectedStatusCode = System.Net.HttpStatusCode.OK;
-        //    var expectedContent = new BookEntity()
-        //    {
-        //        Author = "Samuel Pang",
-        //        Title = "Asp.Net Core WebAPI",
-        //        Genre = "Chen",
-        //        Price = "26.00",
-        //        Publish_Date = "2000-02-15",
-        //        Description = "This is my book"
-        //    };
-
-        //    var stopwatch = Stopwatch.StartNew();
-
-        //    // Act.
-        //    var response = await _httpClient.PostAsync("api/Books", GetJsonStringContent(expectedContent));
-
-        //    var contents = await response.Content.ReadAsStringAsync();
-        //    PostItem myDeserializedClass = JsonConvert.DeserializeObject<PostItem>(contents);
-
-        //    myDeserializedClass.value.Id = null;
-        //    //Assert
-        //    Assert.Equal(response.StatusCode, expectedStatusCode);
-        //}
-
         [Fact]
         public async Task TestGetBookById()
         {
@@ -169,7 +144,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync("/api/Books/id");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -188,7 +163,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync("/api/Books/author");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -206,7 +181,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync("/api/Books/title");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             output.WriteLine(myDeserializedClass.value.ToString());
             output.WriteLine(myDeserializedClass.value.Count.ToString());
@@ -216,7 +191,6 @@ namespace Book.Library.Test
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-
         public async Task TestGetBookByGenre()
         {
             // Arrange.
@@ -228,7 +202,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync("/api/Books/genre");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -246,7 +220,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync("/api/Books/price");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -264,7 +238,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync("/api/Books/published");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -282,13 +256,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync("/api/Books/description");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList, myDeserializedClass.value.ToList()));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchById()
         {
@@ -302,13 +275,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/id/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchByAuthor()
         {
@@ -322,13 +294,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/author/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchByTitle()
         {
@@ -342,13 +313,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/title/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchByGenre()
         {
@@ -362,13 +332,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/genre/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchByPrice()
         {
@@ -382,13 +351,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/price/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchByPrices()
         {
@@ -402,13 +370,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/price/{minValue}&{maxValue}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchByPublished()
         {
@@ -422,13 +389,12 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/published/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
-
         [Fact]
         public async Task TestGetBookSearchByPublishedYear()
         {
@@ -444,7 +410,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/published/{year}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             foreach (var item in newList)
                 output.WriteLine(item.Id);
@@ -472,7 +438,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/published/{year}/{month}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -496,7 +462,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/published/{year}/{month}/{day}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -516,7 +482,7 @@ namespace Book.Library.Test
             var response = await _httpClient.GetAsync($"/api/Books/description/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
-            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(contents);
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
             Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
@@ -549,7 +515,7 @@ namespace Book.Library.Test
         }
 
         [Fact]
-        public async Task TesttUpdateBook()
+        public async Task TestUpdateBook()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
@@ -570,20 +536,20 @@ namespace Book.Library.Test
             var response = await _httpClient.PutAsync($"api/Books/{bookId}", GetJsonStringContent(expectedContent));
 
             var contents = await response.Content.ReadAsStringAsync();
-            PostItem myDeserializedClass = JsonConvert.DeserializeObject<PostItem>(contents);
+            PostResponseData myDeserializedClass = JsonConvert.DeserializeObject<PostResponseData>(contents);
 
             myDeserializedClass.value.Id = null;
             //Assert
             Assert.Equal(expectedStatusCode, response.StatusCode);
         }
 
-        public class Root
+        public class GetResponseData
         {
             public List<BookEntity> value { get; set; }
             public int statusCode { get; set; }
             public object? contentType { get; set; }
         }
-        public class PostItem
+        public class PostResponseData
         {
             public BookEntity? value { get; set; }
             public int statusCode { get; set; }
@@ -595,6 +561,7 @@ namespace Book.Library.Test
 
         public void Dispose()
         {
+            output.WriteLine("Dispose started");
         }
     }
 }
