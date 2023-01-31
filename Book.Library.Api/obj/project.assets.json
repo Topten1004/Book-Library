@@ -4127,11 +4127,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Api\\Book.Library.Api.csproj",
+      "projectUniqueName": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Api\\Book.Library.Api.csproj",
       "projectName": "Book.Library.Api",
-      "projectPath": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Api\\Book.Library.Api.csproj",
+      "projectPath": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Api\\Book.Library.Api.csproj",
       "packagesPath": "C:\\Users\\MISUKA\\.nuget\\packages\\",
-      "outputPath": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Api\\obj\\",
+      "outputPath": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Api\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -4153,11 +4153,11 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "projectReferences": {
-            "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Business\\Book.Library.Business.csproj": {
-              "projectPath": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Business\\Book.Library.Business.csproj"
+            "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Business\\Book.Library.Business.csproj": {
+              "projectPath": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Business\\Book.Library.Business.csproj"
             },
-            "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Data\\Book.Library.Data.csproj": {
-              "projectPath": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Data\\Book.Library.Data.csproj"
+            "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Data\\Book.Library.Data.csproj": {
+              "projectPath": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Data\\Book.Library.Data.csproj"
             }
           }
         }

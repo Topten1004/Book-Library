@@ -3466,11 +3466,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Business\\Book.Library.Business.csproj",
+      "projectUniqueName": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Business\\Book.Library.Business.csproj",
       "projectName": "Book.Library.Business",
-      "projectPath": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Business\\Book.Library.Business.csproj",
+      "projectPath": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Business\\Book.Library.Business.csproj",
       "packagesPath": "C:\\Users\\MISUKA\\.nuget\\packages\\",
-      "outputPath": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Business\\obj\\",
+      "outputPath": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Business\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -3492,8 +3492,8 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "projectReferences": {
-            "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Data\\Book.Library.Data.csproj": {
-              "projectPath": "E:\\GitHub\\FullStack_Github\\Book.Library\\Book.Library.Data\\Book.Library.Data.csproj"
+            "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Data\\Book.Library.Data.csproj": {
+              "projectPath": "E:\\GitHub\\FullStack_Github\\Book-Library\\Book.Library.Data\\Book.Library.Data.csproj"
             }
           }
         }

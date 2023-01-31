@@ -19,7 +19,10 @@ namespace Book.Library.Api
         {
             services.AddDbContext<ApplicationDbContext>(
                 option => option.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly("Book.Library.Api")));
+                sqlServerOptionsAction: sqlOptions => {
+                    sqlOptions.EnableRetryOnFailure();
+                }));
+
             services.AddAutoMapper(typeof(AutoMapperProfiles));
 
             services.AddScoped<JsonFileHelper>();

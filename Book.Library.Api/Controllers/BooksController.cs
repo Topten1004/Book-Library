@@ -15,6 +15,8 @@ namespace Book.Library.Api.Controllers
         private readonly IMapper _mapper;
         private readonly ILogger<BooksController> _logger;
 
+        List<BookEntity> books = new List<BookEntity>();
+
         public BooksController(ILogger<BooksController> logger, IMapper mapper, IGenericService genericService)
         {
             _logger = logger;
@@ -42,7 +44,7 @@ namespace Book.Library.Api.Controllers
         public async Task<IResult> GetBooksSortById()
         {
             var result = await _genericService.GetBookList();
-            result = result.OrderBy(x => Convert.ToInt32(x.Id.Remove(0,1)));
+            result = result.OrderBy(x => Convert.ToInt32(x.Id.Remove(0, 1)));
 
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
@@ -108,6 +110,7 @@ namespace Book.Library.Api.Controllers
             var result = await _genericService.GetBookList();
             result = result.OrderBy(x => double.Parse(x.Price, CultureInfo.InvariantCulture));
 
+
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
             {
@@ -119,6 +122,7 @@ namespace Book.Library.Api.Controllers
         // Method to get the book orderby published_date
         [HttpGet]
         [Route("published")]
+
         public async Task<IResult> GetBooksSortByPublished()
         {
             var result = await _genericService.GetBookList();
@@ -154,12 +158,12 @@ namespace Book.Library.Api.Controllers
         public async Task<IResult> GetBooksSearchId(string search)
         {
             var result = await _genericService.GetBookList();
-            result = result.Where(x => x.Id.Contains(search)).OrderBy(x => x.Id);
+            result = result.Where(x => x.Id.Contains(search)).OrderBy(x => Convert.ToInt32(x.Id.Remove(0, 1)));
 
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
             {
-                return Results.NotFound();
+                return Results.Ok(null);
             }
             return Results.Ok(book);
         }
@@ -170,7 +174,7 @@ namespace Book.Library.Api.Controllers
         public async Task<IResult> GetBooksSearchAuthor(string search)
         {
             var result = await _genericService.GetBookList();
-            result = result.Where(x => x.Author.Contains(search)).OrderBy(x => x.Author);
+            result = result.Where(x => x.Author.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Author);
 
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
@@ -186,7 +190,7 @@ namespace Book.Library.Api.Controllers
         public async Task<IResult> GetBooksSearchTitle(string search)
         {
             var result = await _genericService.GetBookList();
-            result = result.Where(x => x.Title.Contains(search)).OrderBy(x => x.Title);
+            result = result.Where(x => x.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Title);
 
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
@@ -202,7 +206,7 @@ namespace Book.Library.Api.Controllers
         public async Task<IResult> GetBooksSearchGenre(string search)
         {
             var result = await _genericService.GetBookList();
-            result = result.Where(x => x.Genre.Contains(search)).OrderBy(x => x.Genre);
+            result = result.Where(x => x.Genre.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Genre);
 
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
@@ -212,6 +216,7 @@ namespace Book.Library.Api.Controllers
             return Results.Ok(book);
         }
 
+        // Method to get the book orderby price and search pattern in price
         // Method to get the book orderby price and search pattern in price
         [HttpGet]
         [Route("price/{search}")]
@@ -251,6 +256,24 @@ namespace Book.Library.Api.Controllers
         {
             var result = await _genericService.GetBookList();
             result = result.Where(x => x.Publish_Date.Contains(search)).OrderBy(x => x.Publish_Date);
+
+            IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
+            if (book == null)
+            {
+                return Results.NotFound();
+            }
+            return Results.Ok(book);
+        }
+
+        // Method to get the book orderby published and search pattern in published
+        [HttpGet]
+        [Route("published/{year:int}")]
+        public async Task<IResult> GetBooksSearchPublishedYear(int year)
+        {
+            string str = year.ToString();
+
+            var result = await _genericService.GetBookList();
+            result = result.Where(x => x.Publish_Date.Contains(str)).OrderBy(x => x.Publish_Date);
 
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
@@ -302,8 +325,10 @@ namespace Book.Library.Api.Controllers
         public async Task<IResult> GetBooksSearchDescription(string search)
         {
             var result = await _genericService.GetBookList();
-            result = result.Where(x => x.Description.Contains(search)).OrderBy(x => x.Description);
+            result = result.Where(x => x.Description.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Description);
 
+            //&& x.Title.Contains(search, StringComparison.OrdinalIgnoreCase)
+            
             IEnumerable<BookVM> book = _mapper.Map<IEnumerable<BookVM>>(result);
             if (book == null)
             {
@@ -332,11 +357,10 @@ namespace Book.Library.Api.Controllers
         {
             var result = await _genericService.GetBookList();
             List<int> ids = new List<int>();
-            foreach(var item in result)
+            foreach (var item in result)
             {
                 ids.Add(Convert.ToInt32(item.Id.Remove(0, 1)));
             }
-
             int id = ids.Max() + 1;
             model.Id = "B" + id.ToString();
             BookEntity book = _mapper.Map<BookEntity>(model);
@@ -350,7 +374,7 @@ namespace Book.Library.Api.Controllers
 
         [HttpPut]
         [Route("{id}")]
-        public async Task<IResult> UpdateBook([FromRoute]string id, [FromBody]BookVM model)
+        public async Task<IResult> UpdateBook([FromRoute] string id, [FromBody] BookVM model)
         {
             BookEntity book = await _genericService.GetBookDetailById(id);
             if (model.Publish_Date != null)
@@ -371,11 +395,13 @@ namespace Book.Library.Api.Controllers
             }
             return Results.Ok(save);
         }
+
         // Method to delete the book detail
-        [HttpDelete(Name = "DeleteBook")]
-        public async Task<IResult> DeleteBook(string bookId)
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IResult> DeleteBook(string id)
         {
-            await _genericService.DeleteBook(bookId);
+            await _genericService.DeleteBook(id);
             return Results.Ok();
         }
     }
