@@ -31,7 +31,7 @@ namespace Book.Library.Test
         Mock<IGenericService> _service;
 
         private IConfiguration Configuration = null;
-
+        public const int _expectedMaxElapsedMilliseconds = 10000;
 
         private readonly HttpClient _httpClient = new() { BaseAddress = new Uri("https://localhost:7193/") };
         public static readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
@@ -52,56 +52,30 @@ namespace Book.Library.Test
             this._service = new Mock<IGenericService>();
         }
 
-        public async Task<List<BookEntity>> GetAllBookItemsFromDataBase()
-        {
-            var str = "Server=.;Initial Catalog=BookLibDb; Integrated Security = True; trusted_connection=true;encrypt=false;";
-            var context = new ApplicationDbContext(str);
-            IGenericRepository _repository = new GenericRepository(context);
-            var _service = new GenericService(_repository);
-            List<BookEntity> sales = new List<BookEntity>();
-
-            var bookItems = await _service.GetBookList().ConfigureAwait(false);
-
-            return (List<BookEntity>)bookItems;
-        }
-
-        //[Fact]
-        public async Task TestPostAddBook()
+        #region GET Request Test
+        [Fact]
+        public async Task GetBookList_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
-            var expectedContent = new BookEntity()
-            {
-                Author = "Arthur Chen",
-                Title = "Asp.Net Core WebAPI",
-                Genre = "Chen",
-                Price = "12.00",
-                Publish_Date = "2000-02-15",
-                Description = "This is my book"
-            };
-
             var stopwatch = Stopwatch.StartNew();
 
-        //    // Act.
-        //    var response = await _httpClient.PostAsync("/api/Books", GetJsonStringContent(expectedContent));
-            
-        //    var bookItems = await GetAllBookItemsFromDataBase();
+            // Act.
+            seedDatas = await GetAllBookItemsFromDataBase();
 
-        //    var contents = await response.Content.ReadAsStringAsync();
-        //    PostResponseData myDeserializedClass = JsonConvert.DeserializeObject<PostResponseData>(contents);
+            var response = await _httpClient.GetAsync("/api/Books");
+            var newsList = seedDatas.OrderBy(x => x.Id).ToList();
 
-        //    var id = myDeserializedClass.value.Id;
-        //    var item = bookItems.Where(x => x.Id == id).FirstOrDefault();
+            var contents = await response.Content.ReadAsStringAsync();
+            GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
-        //    output.WriteLine(item.Id);
-        //    output.WriteLine(myDeserializedClass.value.Id);
-
-        //    //Assert
-        //    Assert.Equal(true, CompareOne(item, myDeserializedClass.value));
-        //    Assert.Equal(response.StatusCode, expectedStatusCode);
+            //Assert
+            Assert.True(CompareList(newsList, myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
+            Assert.Equal(response.StatusCode, expectedStatusCode);
         }
 
-        [Fact(DisplayName = "Post Request SaveBook")]
+        [Fact]
         public async void SaveBookDetail()
         {
             ////Arrange
@@ -125,12 +99,14 @@ namespace Book.Library.Test
             var userRepository = new Mock<IGenericRepository>();
             userRepository.Setup(x => x.UpdateBookDetail(book)).ReturnsAsync(book);
             IGenericService _service = new GenericService(userRepository.Object);
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
             ////Act
             BookEntity result = _service.UpdateBookDetail(book).Result;
 
             //Assert
             Assert.Equal(book, result);
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
         }
         [Fact]
         public void GetBookDetailById()
@@ -169,31 +145,33 @@ namespace Book.Library.Test
         }
 
         [Fact]
-        public async Task TestGetBookById()
+        public async Task GetBooksSortById_Test()
         {
-            
-//            Assert.True(item1.Equals(item));
-            //            Assert.Equal(item, item1);
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
-            var newList = seedDatas.OrderBy(x => Convert.ToInt32(x.Id.Remove(0, 1))).ToList();
             // Act.
-            var response = await _httpClient.GetAsync("/api/Books/id");
+            seedDatas = await GetAllBookItemsFromDataBase();
+            var newList = seedDatas.OrderBy(x => Convert.ToInt32(x.Id.Remove(0, 1))).ToList();
 
+            var response = await _httpClient.GetAsync("/api/Books/id");
             var contents = await response.Content.ReadAsStringAsync();
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), right: myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
 
-        public async Task TestGetBookByAuthor()
+        public async Task GetBooksSortByAuthor_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
+
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.OrderBy(x => x.Author).ThenBy(x => Convert.ToInt32(x.Id.Remove(0, 1)));
             var stopwatch = Stopwatch.StartNew();
@@ -204,17 +182,19 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), right: myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
 
-        public async Task TestGetBookByTitle()
+        public async Task GetBooksSortByTitle_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
 
             // Act.
+            var stopwatch = Stopwatch.StartNew();
             var bookItems = await GetAllBookItemsFromDataBase();
             var response = await _httpClient.GetAsync("/api/Books/title");
 
@@ -223,18 +203,17 @@ namespace Book.Library.Test
             var contents = await response.Content.ReadAsStringAsync();
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
-            output.WriteLine(bookItems.Count().ToString());
-            output.WriteLine(myDeserializedClass.value.Count.ToString());
-
             //Assert
-            Assert.Equal(true, CompareList(bookItems, myDeserializedClass.value));
+            Assert.True(CompareList(bookItems, right: myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookByGenre()
+        public async Task GetBooksSortByGenre_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.OrderBy(x => x.Genre).ToList();
             var stopwatch = Stopwatch.StartNew();
@@ -245,17 +224,19 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookByPrice()
+        public async Task GetBooksSortByPrice_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
-
-            var newList = seedDatas.OrderBy(x => double.Parse(x.Price, CultureInfo.InvariantCulture));
             var stopwatch = Stopwatch.StartNew();
+
+            seedDatas = await GetAllBookItemsFromDataBase();
+            var newList = seedDatas.OrderBy(x => double.Parse(x.Price, CultureInfo.InvariantCulture));
             // Act.
             var response = await _httpClient.GetAsync("/api/Books/price");
 
@@ -263,17 +244,19 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookByPublished()
+        public async Task GetBooksSortByPublished_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
-
-            var newList = seedDatas.OrderBy(x => x.Publish_Date);
             var stopwatch = Stopwatch.StartNew();
+            seedDatas = await GetAllBookItemsFromDataBase();
+
+            var newList = seedDatas.OrderBy(x => x.Publish_Date);            
             // Act.
             var response = await _httpClient.GetAsync("/api/Books/published");
 
@@ -281,14 +264,18 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookByDescription()
+        public async Task GetBooksSortByDescription_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
+            var stopWatch = Stopwatch.StartNew();
+
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.OrderBy(x => x.Description).ToList();
             var stopwatch = Stopwatch.StartNew();
@@ -299,14 +286,18 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList, myDeserializedClass.value.ToList()));
+            Assert.True(CompareList(newList, myDeserializedClass.value.ToList()));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchById()
+        public async Task GetBooksSearchId_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
+            var stopWatch = Stopwatch.StartNew();
+            seedDatas = await GetAllBookItemsFromDataBase();
+
             string search = "8";
 
             var newList = seedDatas.Where(x => x.Id.Contains(search)).OrderBy(x => Convert.ToInt32(x.Id.Remove(0, 1)));
@@ -318,35 +309,42 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchByAuthor()
+        public async Task GetBooksSearchAuthor_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             string search = "8";
+            var stopWatch = Stopwatch.StartNew();
+
+            // Act.
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.Where(x => x.Author.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Author);
             var stopwatch = Stopwatch.StartNew();
-            // Act.
             var response = await _httpClient.GetAsync($"/api/Books/author/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchByTitle()
+        public async Task GetBooksSearchTitle_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             string search = "8";
+            var stopWatch = Stopwatch.StartNew();
 
+            seedDatas = await GetAllBookItemsFromDataBase();
             var newList = seedDatas.Where(x => x.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Title);
             var stopwatch = Stopwatch.StartNew();
             // Act.
@@ -356,15 +354,19 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchByGenre()
+        public async Task GetBooksSearchGenre_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             string search = "8";
+            var stopWatch = Stopwatch.StartNew();
+
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.Where(x => x.Genre.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Genre);
             var stopwatch = Stopwatch.StartNew();
@@ -375,15 +377,19 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchByPrice()
+        public async Task GetBooksSearchPrice_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             string search = "8";
+            var stopWatch = Stopwatch.StartNew();
+
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.Where(x => x.Price.Contains(search)).OrderBy(x => double.Parse(x.Price, CultureInfo.InvariantCulture));
             var stopwatch = Stopwatch.StartNew();
@@ -394,16 +400,19 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchByPrices()
+        public async Task GetBooksSearchPrice_Min_Max_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             double minValue = 10.00;
             double maxValue = 50.00;
+            var stopwatch = Stopwatch.StartNew();
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.Where(x => double.Parse(x.Price, CultureInfo.InvariantCulture) >= minValue && double.Parse(x.Price, CultureInfo.InvariantCulture) <= maxValue).OrderBy(x => double.Parse(x.Price, CultureInfo.InvariantCulture));
             // Act.
@@ -413,15 +422,18 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchByPublished()
+        public async Task GetBooksSearchPublished_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             string search = "200";
+            var stopWatch = Stopwatch.StartNew();
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.Where(x => x.Publish_Date.Contains(search)).OrderBy(x => x.Publish_Date).ToList();
             var stopwatch = Stopwatch.StartNew();
@@ -432,20 +444,23 @@ namespace Book.Library.Test
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
-        public async Task TestGetBookSearchByPublishedYear()
+        public async Task GetBooksSearchPublishedYear_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             int year = 2000;
             string str = year.ToString();
 
+            var stopwatch = Stopwatch.StartNew();
+            seedDatas = await GetAllBookItemsFromDataBase();
+
             var newList = seedDatas.Where(x => x.Publish_Date.Contains(str)).OrderBy(x => x.Publish_Date).ToList();
 
-            var stopwatch = Stopwatch.StartNew();
             // Act.
             var response = await _httpClient.GetAsync($"/api/Books/published/{year}");
 
@@ -459,129 +474,142 @@ namespace Book.Library.Test
                 output.WriteLine(item.Id);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
 
         [Fact]
-        public async Task TestGetBookSearchByPublishedMonth()
+        public async Task GetBooksSearchPublishedMonth_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             int year = 2000;
             int month = 2;
             string str = year.ToString() + "-" + String.Format("{0:D2}", month);
-          
-            var newList = seedDatas.Where(x => x.Publish_Date.Contains(str)).OrderBy(x => x.Publish_Date);
-            var stopwatch = Stopwatch.StartNew();
-            // Act.
-            var response = await _httpClient.GetAsync($"/api/Books/published/{year}/{month}");
 
+            var stopwatch = Stopwatch.StartNew();
+
+            // Act.
+            seedDatas = await GetAllBookItemsFromDataBase();
+
+            var newList = seedDatas.Where(x => x.Publish_Date.Contains(str)).OrderBy(x => x.Publish_Date);
+
+            var response = await _httpClient.GetAsync($"/api/Books/published/{year}/{month}");
             var contents = await response.Content.ReadAsStringAsync();
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
 
         [Fact]
-        public async Task TestGetBookSearchByPublishedDay()
+        public async Task GetBooksSearchPublishedDate_Test ()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             int year = 2000;
             int month = 12;
             int day = 19;
+            var stopwatch = Stopwatch.StartNew();
 
+            // Act.
+            seedDatas = await GetAllBookItemsFromDataBase();
             string str = year.ToString() + "-" + String.Format("{0:D2}", month) + "-" + String.Format("{0:D2}", day);
 
             var newList = seedDatas.Where(x => x.Publish_Date.Contains(str)).OrderBy(x => x.Publish_Date);
-            var stopwatch = Stopwatch.StartNew();
-            // Act.
             var response = await _httpClient.GetAsync($"/api/Books/published/{year}/{month}/{day}");
 
             var contents = await response.Content.ReadAsStringAsync();
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
 
         [Fact]
-        public async Task TestGetBookSearchByDescription()
+        public async Task GetBooksSearchDescription_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             string search = "8";
+            var stopwatch = Stopwatch.StartNew();
+
+            // Act.
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             var newList = seedDatas.Where(x => x.Description.Contains(search, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Description);
-            var stopwatch = Stopwatch.StartNew();
-            // Act.
             var response = await _httpClient.GetAsync($"/api/Books/description/{search}");
 
             var contents = await response.Content.ReadAsStringAsync();
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
 
+        #endregion
+        #region POST
         [Fact]
-        public void TestList()
+        public async Task PostAddBook_Test()
         {
-            var numbers = new List<int>();
-            numbers.Add(2);
-            numbers.Add(3);
-            numbers.Add(5);
-            numbers.Add(7);
-            Console.WriteLine("LIST 1: " + numbers.Count);
+            // Arrange.
+            var expectedStatusCode = System.Net.HttpStatusCode.OK;
+            var expectedContent = new BookEntity()
+            {
+                Author = "Arthur Chen",
+                Title = "Asp.Net Core WebAPI",
+                Genre = "Chen",
+                Price = "12.00",
+                Publish_Date = "2000-02-15",
+                Description = "This is my book"
+            };
+            var stopwatch = Stopwatch.StartNew();
 
-            // Version 2: create a List with an initializer.
-            var numbers2 = new List<int>() { 2, 3, 5, 7 };
-            Console.WriteLine("LIST 2: " + numbers2.Count);
+            // Act.
+            var response = await _httpClient.PostAsync("/api/Books", GetJsonStringContent(expectedContent));
 
-            Assert.Equal(numbers, numbers2);
+            var bookItems = await GetAllBookItemsFromDataBase();
+
+            var contents = await response.Content.ReadAsStringAsync();
+            PostResponseData myDeserializedClass = JsonConvert.DeserializeObject<PostResponseData>(contents);
+
+            var id = myDeserializedClass.value.Id;
+            var item = bookItems.Where(x => x.Id == id).FirstOrDefault();
+
+            //Assert
+            Assert.True(CompareOne(item, myDeserializedClass.value));
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
+            Assert.Equal(response.StatusCode, expectedStatusCode);
         }
+#endregion
+        #region DELETE
         [Fact]
-        public async Task DeleteBookById()
+        public async Task DeleteBook_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
             var bookId = "B19";
             var stopwatch = Stopwatch.StartNew();
+            seedDatas = await GetAllBookItemsFromDataBase();
 
             // Act.
             var response = await _httpClient.DeleteAsync($"/api/Books/{bookId}");
             // Assert.
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
 
-        public bool CompareList(List<BookEntity> left, List<BookEntity> right)
-        {
-            var obj1Str = JsonConvert.SerializeObject(left);
-            var obj2Str = JsonConvert.SerializeObject(right);
-
-            if (obj1Str != obj2Str)
-                return false;
-
-            return true;
-        }
-        public bool CompareOne(BookEntity left, BookEntity right)
-        {
-            if(left.Id != right.Id) return false;
-            if (left.Genre != right.Genre) return false;
-            if (left.Title != right.Title) return false;
-            if (left.Publish_Date != right.Publish_Date) return false;
-            if (left.Description != right.Description) return false;
-            if (left.Price != right.Price) return false;
-
-            return true;
-        }
+        #endregion
+        #region PUT
         [Fact]
-        public async Task TestUpdateBook()
+        public async Task UpdateBook_Test()
         {
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
@@ -598,6 +626,7 @@ namespace Book.Library.Test
 
             var stopwatch = Stopwatch.StartNew();
 
+            seedDatas = await GetAllBookItemsFromDataBase();
             // Act.
             var response = await _httpClient.PutAsync($"api/Books/{bookId}", GetJsonStringContent(expectedContent));
 
@@ -607,8 +636,9 @@ namespace Book.Library.Test
             myDeserializedClass.value.Id = null;
             //Assert
             Assert.Equal(expectedStatusCode, response.StatusCode);
+            Assert.True(stopwatch.ElapsedMilliseconds < _expectedMaxElapsedMilliseconds);
         }
-
+            #endregion
         public class GetResponseData
         {
             public List<BookEntity> value { get; set; }
@@ -620,6 +650,40 @@ namespace Book.Library.Test
             public BookEntity? value { get; set; }
             public int statusCode { get; set; }
             public object? contentType { get; set; }
+        }
+
+        public bool CompareList(List<BookEntity> left, List<BookEntity> right)
+        {
+            var obj1Str = JsonConvert.SerializeObject(left);
+            var obj2Str = JsonConvert.SerializeObject(right);
+
+            if (obj1Str != obj2Str)
+                return false;
+
+            return true;
+        }
+        public bool CompareOne(BookEntity left, BookEntity right)
+        {
+            var obj1Str = JsonConvert.SerializeObject(left);
+            var obj2Str = JsonConvert.SerializeObject(right);
+
+            if (obj1Str != obj2Str)
+                return false;
+
+            return true;
+        }
+
+        public async Task<List<BookEntity>> GetAllBookItemsFromDataBase()
+        {
+            var str = "Server=.;Initial Catalog=BookLibDb; Integrated Security = True; trusted_connection=true;encrypt=false;";
+            var context = new ApplicationDbContext(str);
+            IGenericRepository _repository = new GenericRepository(context);
+            var _service = new GenericService(_repository);
+            List<BookEntity> sales = new List<BookEntity>();
+
+            var bookItems = await _service.GetBookList().ConfigureAwait(false);
+
+            return (List<BookEntity>)bookItems;
         }
 
         public static StringContent GetJsonStringContent<T>(T model)
