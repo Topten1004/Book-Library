@@ -52,8 +52,7 @@ namespace Book.Library.Test
             this._service = new Mock<IGenericService>();
         }
 
-        [Fact]
-        public async Task GetAllBookItemsFromDataBase()
+        public async Task<List<BookEntity>> GetAllBookItemsFromDataBase()
         {
             var str = "Server=.;Initial Catalog=BookLibDb; Integrated Security = True; trusted_connection=true;encrypt=false;";
             var context = new ApplicationDbContext(str);
@@ -63,7 +62,43 @@ namespace Book.Library.Test
 
             var bookItems = await _service.GetBookList().ConfigureAwait(false);
 
-            Assert.True(true);
+            return (List<BookEntity>)bookItems;
+        }
+
+        //[Fact]
+        public async Task TestPostAddBook()
+        {
+            // Arrange.
+            var expectedStatusCode = System.Net.HttpStatusCode.OK;
+            var expectedContent = new BookEntity()
+            {
+                Author = "Arthur Chen",
+                Title = "Asp.Net Core WebAPI",
+                Genre = "Chen",
+                Price = "12.00",
+                Publish_Date = "2000-02-15",
+                Description = "This is my book"
+            };
+
+            var stopwatch = Stopwatch.StartNew();
+
+        //    // Act.
+        //    var response = await _httpClient.PostAsync("/api/Books", GetJsonStringContent(expectedContent));
+            
+        //    var bookItems = await GetAllBookItemsFromDataBase();
+
+        //    var contents = await response.Content.ReadAsStringAsync();
+        //    PostResponseData myDeserializedClass = JsonConvert.DeserializeObject<PostResponseData>(contents);
+
+        //    var id = myDeserializedClass.value.Id;
+        //    var item = bookItems.Where(x => x.Id == id).FirstOrDefault();
+
+        //    output.WriteLine(item.Id);
+        //    output.WriteLine(myDeserializedClass.value.Id);
+
+        //    //Assert
+        //    Assert.Equal(true, CompareOne(item, myDeserializedClass.value));
+        //    Assert.Equal(response.StatusCode, expectedStatusCode);
         }
 
         [Fact(DisplayName = "Post Request SaveBook")]
@@ -136,6 +171,9 @@ namespace Book.Library.Test
         [Fact]
         public async Task TestGetBookById()
         {
+            
+//            Assert.True(item1.Equals(item));
+            //            Assert.Equal(item, item1);
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
 
@@ -176,18 +214,20 @@ namespace Book.Library.Test
             // Arrange.
             var expectedStatusCode = System.Net.HttpStatusCode.OK;
 
-            var newList = seedDatas.OrderBy(x => x.Title);
             // Act.
+            var bookItems = await GetAllBookItemsFromDataBase();
             var response = await _httpClient.GetAsync("/api/Books/title");
+
+            bookItems = bookItems.OrderBy(x => x.Title).ToList();
 
             var contents = await response.Content.ReadAsStringAsync();
             GetResponseData myDeserializedClass = JsonConvert.DeserializeObject<GetResponseData>(contents);
 
-            output.WriteLine(myDeserializedClass.value.ToString());
+            output.WriteLine(bookItems.Count().ToString());
             output.WriteLine(myDeserializedClass.value.Count.ToString());
 
             //Assert
-            Assert.Equal(true, CompareList(newList.ToList(), myDeserializedClass.value));
+            Assert.Equal(true, CompareList(bookItems, myDeserializedClass.value));
             Assert.Equal(response.StatusCode, expectedStatusCode);
         }
         [Fact]
@@ -490,6 +530,22 @@ namespace Book.Library.Test
         }
 
         [Fact]
+        public void TestList()
+        {
+            var numbers = new List<int>();
+            numbers.Add(2);
+            numbers.Add(3);
+            numbers.Add(5);
+            numbers.Add(7);
+            Console.WriteLine("LIST 1: " + numbers.Count);
+
+            // Version 2: create a List with an initializer.
+            var numbers2 = new List<int>() { 2, 3, 5, 7 };
+            Console.WriteLine("LIST 2: " + numbers2.Count);
+
+            Assert.Equal(numbers, numbers2);
+        }
+        [Fact]
         public async Task DeleteBookById()
         {
             // Arrange.
@@ -505,15 +561,25 @@ namespace Book.Library.Test
 
         public bool CompareList(List<BookEntity> left, List<BookEntity> right)
         {
-            if(left.Count != right.Count) 
+            var obj1Str = JsonConvert.SerializeObject(left);
+            var obj2Str = JsonConvert.SerializeObject(right);
+
+            if (obj1Str != obj2Str)
                 return false;
-            for (int i = 0; i < left.Count; i++)
-                if (left[i].Id != right[i].Id)
-                    return false;
 
             return true;
         }
+        public bool CompareOne(BookEntity left, BookEntity right)
+        {
+            if(left.Id != right.Id) return false;
+            if (left.Genre != right.Genre) return false;
+            if (left.Title != right.Title) return false;
+            if (left.Publish_Date != right.Publish_Date) return false;
+            if (left.Description != right.Description) return false;
+            if (left.Price != right.Price) return false;
 
+            return true;
+        }
         [Fact]
         public async Task TestUpdateBook()
         {
